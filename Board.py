@@ -1,12 +1,13 @@
 import pygame
 
+
 from Square import Chess
-from data.classes.pieces.Rook import Rook
-from data.classes.pieces.Bishop import Bishop
-from data.classes.pieces.Knight import Knight
-from data.classes.pieces.Queen import Queen
-from data.classes.pieces.King import King
-from data.classes.pieces.Pawn import Pawn
+from Figurs.Classes.Rook import Rook
+from Figurs.Classes.Bishop import Bishop
+from Figurs.Classes.Knight import Knight
+from Figurs.Classes.Queen import Queen
+from Figurs.Classes.King import King
+from Figurs.Classes.Pawn import Pawn
 
 
 # Game state checker
@@ -40,7 +41,7 @@ class Board:
         for y in range(8):
             for x in range(8):
                 output.append(
-                    Square(x, y, self.tile_width, self.tile_height)
+                    Chess(x, y, self.tile_width, self.tile_height)
                 )
         return output
 
