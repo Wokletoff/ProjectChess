@@ -1,71 +1,58 @@
-#!/usr/bin/env python3
-"""Server for multithreaded (asynchronous) chat application."""
-from socket import AF_INET, socket, SOCK_STREAM
-from threading import Thread
 
+class ChatServer:
+    clients_list = []
 
-def accept_incoming_connections():
-    """Sets up handling for incoming clients."""
-    while True:
-        client, client_address = SERVER.accept()
-        print("%s:%s has connected." % client_address)
-        client.send(bytes("Greetings from the cave! Now type your name and press enter!", "utf8"))
-        addresses[client] = client_address
-        Thread(target=handle_client, args=(client,)).start()
+    last_received_message = ""
 
+    def __init__(self):
+        self.server_socket = None
+        self.create_listening_server()
 
-def handle_client(client):  # Takes client socket as argument.
-    """Handles a single client connection."""
+    # listen for incoming connection
+    def create_listening_server(self):
 
-    name = client.recv(BUFSIZ).decode("utf8")
-    welcome = 'Welcome %s! If you ever want to quit, type {quit} to exit.' % name
-    client.send(bytes(welcome, "utf8"))
-    msg = "%s has joined the chat!" % name
-    broadcast(bytes(msg, "utf8"))
-    clients[client] = name
+        self.server_socket = socket.socket(socket.AF_INET,
+                                           socket.SOCK_STREAM)  # create a socket using TCP port and ipv4
+        local_ip = input("Your IP")
+        local_port = 33000
+        # this will allow you to immediately restart a TCP server
+        self.server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        # this makes the server listen to requests coming from other computers on the network
+        self.server_socket.bind((local_ip, local_port))
+        print("Listening for incoming messages..")
+        self.server_socket.listen(5)  # listen for incomming connections / max 5 clients
+        self.receive_messages_in_a_new_thread()
 
-    while True:
-        msg = client.recv(BUFSIZ)
-        if msg != bytes("{quit}", "utf8"):
-            broadcast(msg, name + ": ")
-        else:
-            client.send(bytes("{quit}", "utf8"))
-            client.close()
-            del clients[client]
-            broadcast(bytes("%s has left the chat." % name, "utf8"))
-            break
+    # fun to receive new msgs
+    def receive_messages(self, so):
+        while True:
+            incoming_buffer = so.recv(256)  # initialize the buffer
+            if not incoming_buffer:
+                break
+            self.last_received_message = incoming_buffer.decode('utf-8')
+            self.broadcast_to_all_clients(so)  # send to all clients
+        so.close()
 
+    # broadcast the message to all clients
+    def broadcast_to_all_clients(self, senders_socket):
+        for client in self.clients_list:
+            socket, (ip, port) = client
+            if socket is not senders_socket:
+                socket.sendall(self.last_received_message.encode('utf-8'))
 
-def broadcast(msg, prefix=""):  # prefix is for name identification.
-    """Broadcasts a message to all the clients."""
+    def receive_messages_in_a_new_thread(self):
+        while True:
+            client = so, (ip, port) = self.server_socket.accept()
+            self.add_to_clients_list(client)
+            print('Connected to ', ip, ':', str(port))
+            t = threading.Thread(target=self.receive_messages, args=(so,))
+            t.start()
 
-    for sock in clients:
-        sock.send(bytes(prefix, "utf8") + msg)
+    # add a new client
+    def add_to_clients_list(self, client):
+        if client not in self.clients_list:
+            self.clients_list.append(client)
 
-
-clients = {}
-addresses = {}
-
-HOST = ''
-PORT = 33000
-BUFSIZ = 1024
-ADDR = (HOST, PORT)
-
-SERVER = socket(AF_INET, SOCK_STREAM)
-SERVER.bind(ADDR)
 
 if __name__ == "__main__":
-    SERVER.listen(5)
-    print("Waiting for connection...")
-    ACCEPT_THREAD = Thread(target=accept_incoming_connections)
-    ACCEPT_THREAD.start()
-    ACCEPT_THREAD.join()
-    SERVER.close()
-
-conn.send(name.encode())
-while True:
-    message = input('Me : ')
-    conn.send(message.encode())
-    message = conn.recv(1024)
-    message = message.decode()
-    print(client, ':', message)
+    ChatServer()

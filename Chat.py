@@ -1,71 +1,124 @@
-#!/usr/bin/env python3
-"""Script for Tkinter GUI chat client."""
-from socket import AF_INET, socket, SOCK_STREAM
-from threading import Thread
-import tkinter
+from tkinter import Tk, Frame, Scrollbar, Label, END, Entry, Text, VERTICAL, Button, messagebox #Tkinter Python Module for GUI
+import socket #Sockets for network connection
+import threading # for multiple proccess
+
+class GUI:
+    client_socket = None
+    last_received_message = None
+
+    def __init__(self, master):
+        self.root = master
+        self.chat_transcript_area = None
+        self.name_widget = None
+        self.enter_text_widget = None
+        self.join_button = None
+        self.initialize_socket()
+        self.initialize_gui()
+        self.listen_for_incoming_messages_in_a_thread()
+
+    def initialize_socket(self):
+        self.client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)  # initialazing socket with TCP and IPv4
+        remote_ip = input("Server IP: ")  # IP address
+        remote_port = int(input("Server Port"))  # TCP port
+        self.client_socket.connect((remote_ip, remote_port))  # connect to the remote server
+
+    def initialize_gui(self):  # GUI initializer
+        self.root.title("Socket Chat")
+        self.root.resizable(0, 0)
+        self.display_name_section()
+        self.display_chat_entry_box()
+        self.display_chat_box()
+
+    def listen_for_incoming_messages_in_a_thread(self):
+        thread = threading.Thread(target=self.receive_message_from_server,
+                                  args=(self.client_socket,))  # Create a thread for the send and receive in same time
+        thread.start()
+
+    # function to recieve msg
+    def receive_message_from_server(self, so):
+        while True:
+            buffer = so.recv(256)
+            if not buffer:
+                break
+            message = buffer.decode('utf-8')
+
+            if "joined" in message:
+                user = message.split(":")[1]
+                message = user + " has joined"
+                self.chat_transcript_area.insert('end', message + '\n')
+                self.chat_transcript_area.yview(END)
+            else:
+                self.chat_transcript_area.insert('end', message + '\n')
+                self.chat_transcript_area.yview(END)
+
+        so.close()
+
+    def display_name_section(self):
+        frame = Frame()
+        Label(frame, text='Enter Your Name Here! ', font=("arial", 13, "bold")).pack(side='left', pady=20)
+        self.name_widget = Entry(frame, width=60, font=("arial", 13))
+        self.name_widget.pack(side='left', anchor='e', pady=15)
+        self.join_button = Button(frame, text="Join", width=10, command=self.on_join).pack(side='right', padx=5,
+                                                                                           pady=15)
+        frame.pack(side='top', anchor='nw')
+
+    def display_chat_box(self):
+        frame = Frame()
+        Label(frame, text='Chat Box', font=("arial", 12, "bold")).pack(side='top', padx=270)
+        self.chat_transcript_area = Text(frame, width=60, height=10, font=("arial", 12))
+        scrollbar = Scrollbar(frame, command=self.chat_transcript_area.yview, orient=VERTICAL)
+        self.chat_transcript_area.config(yscrollcommand=scrollbar.set)
+        self.chat_transcript_area.bind('<KeyPress>', lambda e: 'break')
+        self.chat_transcript_area.pack(side='left', padx=15, pady=10)
+        scrollbar.pack(side='right', fill='y', padx=1)
+        frame.pack(side='left')
+
+    def display_chat_entry_box(self):
+        frame = Frame()
+        Label(frame, text='Enter Your Message Here!', font=("arial", 12, "bold")).pack(side='top', anchor='w', padx=120)
+        self.enter_text_widget = Text(frame, width=50, height=10, font=("arial", 12))
+        self.enter_text_widget.pack(side='left', pady=10, padx=10)
+        self.enter_text_widget.bind('<Return>', self.on_enter_key_pressed)
+        frame.pack(side='left')
+
+    def on_join(self):
+        if len(self.name_widget.get()) == 0:
+            messagebox.showerror(
+                "Enter your name", "Enter your name to send a message")
+            return
+        self.name_widget.config(state='disabled')
+        self.client_socket.send(("joined:" + self.name_widget.get()).encode('utf-8'))
+
+    def on_enter_key_pressed(self, event):
+        if len(self.name_widget.get()) == 0:
+            messagebox.showerror("Enter your name", "Enter your name to send a message")
+            return
+        self.send_chat()
+        self.clear_text()
+
+    def clear_text(self):
+        self.enter_text_widget.delete(1.0, 'end')
+
+    def send_chat(self):
+        senders_name = self.name_widget.get().strip() + ": "
+        data = self.enter_text_widget.get(1.0, 'end').strip()
+        message = (senders_name + data).encode('utf-8')
+        self.chat_transcript_area.insert('end', message.decode('utf-8') + '\n')
+        self.chat_transcript_area.yview(END)
+        self.client_socket.send(message)
+        self.enter_text_widget.delete(1.0, 'end')
+        return 'break'
+
+    def on_close_window(self):
+        if messagebox.askokcancel("Quit", "Do you want to quit?"):
+            self.root.destroy()
+            self.client_socket.close()
+            exit(0)
 
 
-def receive():
-    """Handles receiving of messages."""
-    while True:
-        try:
-            msg = client_socket.recv(BUFSIZ).decode("utf8")
-            msg_list.insert(tkinter.END, msg)
-        except OSError:  # Possibly client has left the chat.
-            break
-
-
-def send(event=None):  # event is passed by binders.
-    """Handles sending of messages."""
-    msg = my_msg.get()
-    my_msg.set("")  # Clears input field.
-    client_socket.send(bytes(msg, "utf8"))
-    if msg == "{quit}":
-        client_socket.close()
-        top.quit()
-
-
-def on_closing(event=None):
-    """This function is to be called when the window is closed."""
-    my_msg.set("{quit}")
-    send()
-
-top = tkinter.Tk()
-top.title("Chatter")
-
-messages_frame = tkinter.Frame(top)
-my_msg = tkinter.StringVar()  # For the messages to be sent.
-my_msg.set("Type your messages here.")
-scrollbar = tkinter.Scrollbar(messages_frame)  # To navigate through past messages.
-# Following will contain the messages.
-msg_list = tkinter.Listbox(messages_frame, height=15, width=50, yscrollcommand=scrollbar.set)
-scrollbar.pack(side=tkinter.RIGHT, fill=tkinter.Y)
-msg_list.pack(side=tkinter.LEFT, fill=tkinter.BOTH)
-msg_list.pack()
-messages_frame.pack()
-
-entry_field = tkinter.Entry(top, textvariable=my_msg)
-entry_field.bind("<Return>", send)
-entry_field.pack()
-send_button = tkinter.Button(top, text="Send", command=send)
-send_button.pack()
-
-top.protocol("WM_DELETE_WINDOW", on_closing)
-
-#----Now comes the sockets part----
-HOST = input('Enter host: ')
-PORT = input('Enter port: ')
-if not PORT:
-    PORT = 33000
-else:
-    PORT = int(PORT)
-
-BUFSIZ = 1024
-ADDR = (HOST, PORT)
-
-client_socket = socket(AF_INET, SOCK_STREAM)
-client_socket.connect(ADDR)
-
-receive_thread = Thread(target=receive)
-receive_thread.start()
-tkinter.mainloop()  # Starts GUI execution.
+# the mail function
+if __name__ == '__main__':
+    root = Tk()
+    gui = GUI(root)
+    root.protocol("WM_DELETE_WINDOW", gui.on_close_window)
+    root.mainloop()
