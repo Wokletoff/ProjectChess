@@ -10,6 +10,13 @@ class Menu:
     field.pack()
     window.mainloop()
 
+    def Chessbatelffield():
+        pass
+
+
+
+
+
 
 
 
