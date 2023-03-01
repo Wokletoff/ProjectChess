@@ -1,16 +1,23 @@
-import socket
-import threading
-def read_sok():
-     while 1 :
-         data = sor.recv(1024)
-         print(data.decode('utf-8'))
-    server = '192.168.0.1', 5050  # Данные сервера
-    alias: str = input() # Вводим наш псевдоним
-    sor = socket.socket(socket.AF_INET,socket.SOCK_DGRAM)
-    sor.bind(('', 0)) # Задаем сокет как клиент
-    sor.sendto((alias+' Connect to server').encode('utf-8'), server)# Уведомляем сервер о подключении
-    potok = threading.Thread(target= read_sok)
-    potok.start()
-    while 1 :
-        mensahe = input()
-        sor.sendto(('['+alias+']'+mensahe).encode('utf-8'), server)
+import time, socket, sys
+
+socket_server = socket.socket()
+server_host = socket.gethostname()
+ip = socket.gethostbyname(server_host)
+sport = 8080
+
+print('This is your IP address: ', ip)
+server_host = input('Enter friend\'s IP address:')
+name = input('Enter Friend\'s name: ')
+
+socket_server.connect((server_host, sport))
+
+socket_server.send(name.encode())
+server_name = socket_server.recv(1024)
+server_name = server_name.decode()
+
+print(server_name, ' has joined...')
+while True:
+    message = (socket_server.recv(1024)).decode()
+    print(server_name, ":", message)
+    message = input("Me : ")
+    socket_server.send(message.encode())
