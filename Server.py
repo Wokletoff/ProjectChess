@@ -1,3 +1,6 @@
+import socket
+import threading
+
 
 class ChatServer:
     clients_list = []
@@ -13,7 +16,7 @@ class ChatServer:
 
         self.server_socket = socket.socket(socket.AF_INET,
                                            socket.SOCK_STREAM)  # create a socket using TCP port and ipv4
-        local_ip = input("Your IP")
+        local_ip = input("Your IP: ")
         local_port = 33000
         # this will allow you to immediately restart a TCP server
         self.server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
