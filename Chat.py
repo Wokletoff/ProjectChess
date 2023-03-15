@@ -3,8 +3,8 @@ import socket #Sockets for network connection
 import threading # for multiple proccess
 
 class GUI:
-    client_socket = None
-    last_received_message = None
+    client_socket = None                # сокет клиента = пусто
+    last_received_message = None        #
 
     def __init__(self, master):
         self.root = master
@@ -58,8 +58,7 @@ class GUI:
         Label(frame, text='Enter Your Name Here! ', font=("arial", 13, "bold")).pack(side='left', pady=20)
         self.name_widget = Entry(frame, width=60, font=("arial", 13))
         self.name_widget.pack(side='left', anchor='e', pady=15)
-        self.join_button = Button(frame, text="Join", width=10, command=self.on_join).pack(side='right', padx=5,
-                                                                                           pady=15)
+        self.join_button = Button(frame, text="Join", width=10, command=self.on_join).pack(side='right', padx=5,                                                                                   pady=15)
         frame.pack(side='top', anchor='nw')
 
     def display_chat_box(self):
