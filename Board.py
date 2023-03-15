@@ -1,7 +1,7 @@
 import pygame
 
 
-from Square import Chess
+from Square import Square
 from Figurs.Classes.Rook import Rook
 from Figurs.Classes.Bishop import Bishop
 from Figurs.Classes.Knight import Knight
@@ -18,16 +18,16 @@ class Board:
         self.tile_width = width // 8
         self.tile_height = height // 8
         self.selected_piece = None
-        self.turn = 'white'
+        self.turn = 'white' # Первый ход белых
 
-        # try making it chess.board.fen()
+        # Начальное расположение фигур на доске try making it chess.board.fen()
         self.config = [
             ['bR', 'bN', 'bB', 'bQ', 'bK', 'bB', 'bN', 'bR'],
             ['bP', 'bP', 'bP', 'bP', 'bP', 'bP', 'bP', 'bP'],
-            ['', '', '', '', '', '', '', ''],
-            ['', '', '', '', '', '', '', ''],
-            ['', '', '', '', '', '', '', ''],
-            ['', '', '', '', '', '', '', ''],
+            ['', '', '', '', '', '', '', '', '', '', ''],
+            ['', '', '', '', '', '', '', '', '', ''],
+            ['', '', '', '', '', '', '', '', '', ''],
+            ['', '', '', '', '', '', '', '', '', ''],
             ['wP', 'wP', 'wP', 'wP', 'wP', 'wP', 'wP', 'wP'],
             ['wR', 'wN', 'wB', 'wQ', 'wK', 'wB', 'wN', 'wR'],
         ]
@@ -41,8 +41,9 @@ class Board:
         for y in range(8):
             for x in range(8):
                 output.append(
-                    Chess(x, y, self.tile_width, self.tile_height)
+                    Square(x, y, self.tile_width, self.tile_height)
                 )
+
         return output
 
     def get_square_from_pos(self, pos):
