@@ -1,5 +1,6 @@
 import pygame
 
+from Pucsh import Pusher as Pu
 from Board import Board
 
 pygame.init()
@@ -17,6 +18,7 @@ def draw(display):
 
 if __name__ == '__main__':
 	running = True
+	Pu.Push(self=None)
 	while running:
 		mx, my = pygame.mouse.get_pos()
 		for event in pygame.event.get():
